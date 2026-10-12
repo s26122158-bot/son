@@ -277,8 +277,29 @@
                     </div>
                 </a>
 
-                <!-- BUTTONS 3 to 16: LOCKED (Dynamically Generated via JS for Cleanliness) -->
-                <!-- JS will inject Week 3 to Week 16 locked buttons here -->
+                 <!-- BUTTON 3: UNLOCKED -->
+                <a href="w3/index.html" onmouseenter="playHoverSFX()" onclick="playClickSFX()" class="card-active glass-panel rounded-xl p-5 border border-cyber-magenta/50 block relative group">
+                    <div class="tech-corner tech-tl border-cyber-magenta"></div>
+                    <div class="tech-corner tech-tr border-cyber-magenta"></div>
+                    <div class="tech-corner tech-bl border-cyber-magenta"></div>
+                    <div class="tech-corner tech-br border-cyber-magenta"></div>
+
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="font-mono text-xs text-cyber-magenta bg-cyber-magenta/10 px-2 py-0.5 rounded border border-cyber-magenta/30">WEEK 03</span>
+                        <span class="inline-flex items-center gap-1 font-mono text-[10px] text-cyber-green font-bold bg-cyber-green/10 px-2 py-0.5 rounded border border-cyber-green/40">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyber-green animate-pulse"></span> 已解鎖
+                        </span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-cyber-magenta transition font-sans mb-1">Week 3 - CSS Flexbox 與 Grid 佈局</h3>
+                    <p class="text-xs text-slate-400 font-mono mb-4">JavaScript 隨機選擇器與互動應用</p>
+                    <div class="flex items-center justify-between font-mono text-xs text-cyber-magenta group-hover:translate-x-1 transition">
+                        <span>LAUNCH MISSION</span>
+                        <span>➔</span>
+                    </div>
+                </a>
+                
+                <!-- BUTTONS 4 to 16: LOCKED (Dynamically Generated via JS for Cleanliness) -->
+                <!-- JS will inject Week 4 to Week 16 locked buttons here -->
 
             </div>
         </section>
@@ -290,11 +311,10 @@
     </footer>
 
     <script>
-        // --- 1. GENERATE LOCKED BUTTONS 3 TO 16 ---
+        // --- 1. GENERATE LOCKED BUTTONS 4 TO 16 ---
         const missionGrid = document.getElementById('missionGrid');
         
         const upcomingTitles = [
-            "CSS Flexbox 與 Grid 佈局",
             "響應式網頁設計 RWD",
             "JavaScript 基礎語法與 DOM",
             "Event 事件處理與互動",
