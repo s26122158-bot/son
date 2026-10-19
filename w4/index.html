@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>朋友對我的動態留言板</title>
+  
+  <style>
+    /* =========================================================
+       1. 全局變數與風格設定 (賽博朋克/暗黑霓虹風格)
+       ========================================================= */
+    :root {
+      /* 背景主色：深灰黑風格 */
+      --bg-color: #0b0f19;
+      
+      /* 卡片背景色 */
+      --card-bg: rgba(22, 27, 46, 0.85);
+      
+      /* 主要霓虹色彩 (可自行替換 Hex 色碼) */
+      --primary-neon: #00f0ff; /* 青藍色霓虹 */
+      --accent-neon: #ff007f;  /* 粉紅發光霓虹 */
+      
+      /* 文字顏色 */
+      --text-main: #ffffff;
+      --text-sub: #8a99ad;
+
+      /* 卡片變換動畫過渡時間 (秒) */
+      --transition-speed: 0.5s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      margin: 30px 0 40px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      color: var(--primary-neon);
+      text-shadow: 0 0 10px var(--primary-neon), 0 0 20px var(--primary-neon);
+      letter-spacing: 2px;
+    }
+
+    header p {
+      color: var(--text-sub);
+      margin-top: 8px;
+    }
+
+    /* =========================================================
+       2. 酷炫載入動畫 (Loading Animation)
+       ========================================================= */
+    #loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 100px;
+    }
+
+    /* 旋轉霓虹雙色光圈 */
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-left-color: var(--primary-neon);
+      border-right-color: var(--accent-neon);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      letter-spacing: 3px;
+      color: var(--primary-neon);
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* =========================================================
+       3. 瀑布流排版 (Masonry Layout)
+       ========================================================= */
+    .masonry-container {
+      width: 100%;
+      max-width: 1200px;
+      
+      /* 使用 CSS column-count 打造瀑布流 */
+      column-count: 3;       /* 大螢幕預設顯示 3 欄 */
+      column-gap: 20px;      /* 欄位之間的間距 */
+      display: none;         /* 資料載入完成前先隱藏 */
+    }
+
+    /* 響應式微調 (RWD) */
+    @media (max-width: 900px) {
+      .masonry-container { column-count: 2; } /* 中螢幕顯示 2 欄 */
+    }
+    @media (max-width: 600px) {
+      .masonry-container { column-count: 1; } /* 手機螢幕顯示 1 欄 */
+    }
+
+    /* =========================================================
+       4. 留言卡片與輪播發光特效
+       ========================================================= */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      
+      /* 關鍵：防止瀑布流卡片被截斷拆成兩半 */
+      break-inside: avoid;
+      
+      /* 動態過渡效果 */
+      transition: all var(--transition-speed) ease;
+      opacity: 0.7;
+      filter: blur(0.5px);
+      transform: scale(0.98);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 8px;
+    }
+
+    .card-name {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: var(--primary-neon);
+    }
+
+    .card-time {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    .card-content {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      white-space: pre-line; /* 保留留言換行格式 */
+    }
+
+    /* --- 重點：輪播『放大亮起 (Highlight)』特效 --- */
+    .card.active {
+      opacity: 1;
+      filter: blur(0px);
+      transform: scale(1.05); /* 稍微放大卡片 */
+      z-index: 10;
+      position: relative;
+      background: rgba(25, 33, 58, 0.95);
+      
+      /* 霓虹亮起邊框與強烈外發光 */
+      border-color: var(--accent-neon);
+      box-shadow: 0 0 20px var(--accent-neon), 
+                  0 0 40px rgba(255, 0, 127, 0.4);
+    }
+
+    /* 未被選中的卡片加深變暗、變模糊 */
+    .masonry-container.has-active .card:not(.active) {
+      opacity: 0.3;
+      filter: blur(1.5px);
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>💬 朋友對我的動態留言板</h1>
+    <p>溫馨留言展覽輪播中...</p>
+  </header>
+
+  <!-- 酷炫載入中動畫 -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">讀取留言中...</div>
+  </div>
+
+  <!-- 留言牆容器 (瀑布流) -->
+  <div id="wall" class="masonry-container"></div>
+
+  <script>
+    // =========================================================
+    // 參數設定區 (可在此修改網址與輪播間隔時間)
+    // =========================================================
+    
+    // 1. 您的 Google 試算表 CSV 匯出網址
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/1asufUB7U6jg7kksRS07hV2ghMpZR2GWzhBiA4rRxC3M/gviz/tq?tqx=out:csv';
+
+    // 2. 輪播切換間隔秒數 (單位：毫秒，3000ms = 3 秒)
+    const ROTATE_INTERVAL = 3000; 
+
+    // 全局控制變數
+    let cardElements = [];
+    let currentIndex = 0;
+
+    // =========================================================
+    // 主流程：初始化讀取資料
+    // =========================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchComments();
+    });
+
+    // 透過 fetch 讀取 CSV
+    function fetchComments() {
+      fetch(CSV_URL)
+        .then(response => {
+          if (!response.ok) throw new Error('網路回應錯誤，無法存取 CSV');
+          return response.text();
+        })
+        .then(csvText => {
+          // 解析 CSV 內容
+          const data = parseCSV(csvText);
+          
+          // 隱藏載入中動畫，顯示留言牆
+          document.getElementById('loading').style.display = 'none';
+          const wall = document.getElementById('wall');
+          wall.style.display = 'block';
+
+          // 動態生成 DOM 卡片
+          renderCards(data);
+
+          // 若有資料，啟動 3 秒輪播亮起特效
+          if (cardElements.length > 0) {
+            wall.classList.add('has-active'); // 啟用非高亮卡片變暗的 CSS 特效
+            startCarousel();
+          }
+        })
+        .catch(error => {
+          console.error('抓取資料失敗:', error);
+          document.getElementById('loading').innerHTML = `
+            <div style="color: #ff007f; text-align: center;">
+              ❌ 載入失敗！<br>請確認試算表已開啟「知道連結的人皆可查看」權限。
+            </div>
+          `;
+        });
+    }
+
+    // =========================================================
+    // 萬能 CSV 解析器 (妥善處理留言內容中含有逗號與雙引號的情況)
+    // =========================================================
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const result = [];
+
+      // 從第 1 列開始解析（跳過第 0 列的標頭/欄位名稱）
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const row = [];
+        let insideQuote = false;
+        let entry = '';
+
+        for (let char of line) {
+          if (char === '"') {
+            insideQuote = !insideQuote; // 切換雙引號引號狀態
+          } else if (char === ',' && !insideQuote) {
+            row.push(entry.trim().replace(/^"|"$/g, '')); // 去除包裹的引號
+            entry = '';
+          } else {
+            entry += char;
+          }
+        }
+        row.push(entry.trim().replace(/^"|"$/g, '')); // 寫入最後一個欄位
+
+        // 對應欄位：[0]時間戳記, [1]姓名, [2]悄悄話
+        if (row.length >= 3) {
+          result.push({
+            timestamp: row[0],
+            name: row[1] || '匿名朋友',
+            content: row[2] || '（無內容）'
+          });
+        }
+      }
+      return result;
+    }
+
+    // =========================================================
+    // 動態繪製卡片牆
+    // =========================================================
+    function renderCards(data) {
+      const wall = document.getElementById('wall');
+      wall.innerHTML = '';
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        // 渲染欄位內容：姓名、時間戳記、悄悄話內容
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="card-name">👤 ${escapeHTML(item.name)}</span>
+            <span class="card-time">${escapeHTML(item.timestamp)}</span>
+          </div>
+          <div class="card-content">${escapeHTML(item.content)}</div>
+        `;
+
+        wall.appendChild(card);
+      });
+
+      // 取得所有產生的卡片元素陣列
+      cardElements = document.querySelectorAll('.card');
+    }
+
+    // =========================================================
+    // 定時輪播卡片高亮特效 (Carousel Effect)
+    // =========================================================
+    function startCarousel() {
+      // 立即讓第一張卡片亮起
+      highlightCard(currentIndex);
+
+      // 設定 setInterval 每 3 秒切換至下一張卡片
+      setInterval(() => {
+        // 移除當前卡片的高亮樣式
+        cardElements[currentIndex].classList.remove('active');
+
+        // 計算下一個 index (若到最後一張則回到第 0 張)
+        currentIndex = (currentIndex + 1) % cardElements.length;
+
+        // 亮起新卡片
+        highlightCard(currentIndex);
+      }, ROTATE_INTERVAL); // 這裡使用頂部的 ROTATE_INTERVAL (3000ms)
+    }
+
+    // 高亮指定索引的卡片並滾動至可見區域
+    function highlightCard(index) {
+      const targetCard = cardElements[index];
+      targetCard.classList.add('active');
+
+      // 平滑自動滾動到當前亮起卡片的位置
+      targetCard.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+
+    // XSS 安全性過濾器 (避免留言輸入 HTML 惡意標籤)
+    function escapeHTML(str) {
+      return str.replace(/[&<>"']/g, match => {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[match];
+      });
+    }
+  </script>
+</body>
+</html>
