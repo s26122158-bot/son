@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>個人數位名片</title>
-    <!-- 引入 Google Fonts 質感字體與圖示庫 -->
+    <!-- 引入質感字體 (Google Fonts) -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 引入社群圖示庫 (Font Awesome) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS 樣式直接嵌入在 <style> 標籤內 -->
     <style>
-        /* 全局重設 */
+        /* 全局基礎重設 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -20,17 +21,17 @@
         body {
             font-family: 'Noto Sans TC', sans-serif;
             /* 背景色：柔和馬卡龍水藍色 */
-            background-color: #ede3c7;
-            /* 整體畫面水平與垂直置中 */
+            background-color: #E0F2F1;
+            /* 讓整張卡片在螢幕正中央（水平＋垂直置中） */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
         }
 
-        /* 名片卡片容器 */
+        /* 名片卡片主體 */
         .card {
-            background-color: #73b2f5;
+            background-color: #FFFFFF;
             width: 320px;
             padding: 40px 30px;
             border-radius: 28px; /* 大圓角現代感 */
@@ -40,7 +41,7 @@
             transition: all 0.3s ease;
         }
 
-        /* 卡片滑鼠懸浮微效果 */
+        /* 微互動：滑鼠移上卡片時輕微浮起與微調陰影 */
         .card:hover {
             transform: translateY(-6px);
             box-shadow: 0 16px 35px rgba(0, 0, 0, 0.08);
@@ -51,13 +52,13 @@
             width: 110px;
             height: 110px;
             border-radius: 50%; /* 50% 圓角即為正圓形 */
-            object-fit: cover;
+            object-fit: cover; /* 確保圖片不拉伸變形 */
             margin-bottom: 20px;
-            /* 馬卡龍蒂芬妮綠/薄荷綠外框 */
+            /* 馬卡龍薄荷青藍外框 */
             border: 4px solid #B2EBF2;
         }
 
-        /* 2. 名字 */
+        /* 2. 名字與自我介紹 */
         .name {
             font-size: 22px;
             font-weight: 700;
@@ -65,7 +66,6 @@
             margin-bottom: 10px;
         }
 
-        /* 自我介紹 */
         .bio {
             font-size: 14px;
             color: #607D8B;
@@ -73,43 +73,43 @@
             margin-bottom: 30px;
         }
 
-        /* 按鈕群組區塊 */
+        /* 3. 按鈕區塊設定 */
         .button-group {
             display: flex;
             flex-direction: column;
             gap: 14px; /* 按鈕間距 */
         }
 
-        /* 按鈕基礎設定 */
+        /* 按鈕通用樣式 */
         .btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px; /* 圖示與文字的間距 */
+            gap: 8px; /* 圖示與文字間距 */
             padding: 13px 20px;
-            border-radius: 50px; /* 膠囊圓角按鈕 */
+            border-radius: 50px; /* 膠囊狀圓角按鈕 */
             text-decoration: none;
             font-size: 15px;
             font-weight: 500;
             transition: all 0.25s ease;
         }
 
-        /* 3.1 Instagram 按鈕：馬卡龍薄荷青藍 */
+        /* 按鈕 1：Instagram (馬卡龍薄荷青藍) */
         .btn-instagram {
-            background-color: #d90b1f;
+            background-color: #80DEEA;
             color: #004D40;
             box-shadow: 0 4px 14px rgba(128, 222, 234, 0.4);
         }
 
         .btn-instagram:hover {
-            background-color: #d90b1f;
+            background-color: #4DD0E1;
             transform: translateY(-2px);
             box-shadow: 0 6px 18px rgba(128, 222, 234, 0.6);
         }
 
-        /* 3.2 Email 按鈕：馬卡龍天藍色 */
+        /* 按鈕 2：Email (馬卡龍天藍色) */
         .btn-email {
-            background-color: #b0d90b;
+            background-color: #E1F5FE;
             color: #0277BD;
             box-shadow: 0 4px 14px rgba(225, 245, 254, 0.6);
         }
@@ -123,24 +123,24 @@
 </head>
 <body>
 
-    <!-- 名片卡片主體 -->
+    <!-- 名片卡片容器 -->
     <div class="card">
-        <!-- 1. 圓形大頭貼 -->
-        <img class="avatar" src="https://i.postimg.cc/d1tzJGkr/1000218435.jpg" alt="個人大頭貼">
+        <!-- 1. 圓形大头贴（已填入你提供的圖片直連網址） -->
+        <img class="avatar" src="https://i.postimg.cc/f3pHKtvR/image.jpg" alt="個人大頭貼">
         
         <!-- 2. 名字與一行簡短自我介紹 -->
-        <h1 class="name">黃健生</h1>
-        <p class="bio">專注於餐旅與烘焙系</p>
+        <h1 class="name">林雨青</h1>
+        <p class="bio">💧 專注於簡約質感的 UI/UX 設計師 | 用視覺傳遞生活溫度</p>
         
-        <!-- 3. 下方兩個按鈕 (Instagram & Email) -->
+        <!-- 3. 下方兩個按鈕 -->
         <div class="button-group">
-            <!-- 請將下面的 instagram.com 替換成你的完整 IG 帳號網址 -->
+            <!-- 將 href 裡的網址換成你的 IG 連結 -->
             <a href="https://instagram.com/" target="_blank" class="btn btn-instagram">
                 <i class="fa-brands fa-instagram"></i> Instagram
             </a>
             
-            <!-- Email 按鈕已經設定為你的信箱 s26122158@stu.edu.tw -->
-            <a href="mailto:s26122158@stu.edu.tw" class="btn btn-email">
+            <!-- 將 href 裡的 Email 換成你的 電子郵件 -->
+            <a href="mailto:your_email@example.com" class="btn btn-email">
                 <i class="fa-regular fa-envelope"></i> Email Me
             </a>
         </div>
