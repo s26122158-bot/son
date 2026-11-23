@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FLASH VOTE // 拍照二選一極速投票器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #050505;
+      --bg-card: #0c0c0f;
+      --bg-panel: #121217;
+      --flash-red: #ff172e;
+      --flash-crimson: #b9081a;
+      --flash-glow: rgba(255, 23, 46, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      color: #f4f4f6;
+      font-family: 'Noto Sans TC', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(255, 23, 46, 0.16) 0%, transparent 55%),
+        linear-gradient(rgba(255, 23, 46, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 23, 46, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+    }
+
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    .font-mono-tech { font-family: 'JetBrains Mono', monospace; }
+
+    /* Flash Red 卡片與光暈 */
+    .flash-card {
+      background: linear-gradient(180deg, rgba(20, 20, 26, 0.92) 0%, rgba(10, 10, 13, 0.98) 100%);
+      border: 1px solid rgba(255, 23, 46, 0.28);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .flash-border-active {
+      border-color: var(--flash-red) !important;
+      box-shadow: 0 0 28px var(--flash-glow), inset 0 0 16px rgba(255, 23, 46, 0.15) !important;
+    }
+
+    /* 閃電掃光按鈕 */
+    .btn-flash-red {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #ff172e 0%, #c4081b 100%);
+      color: #ffffff;
+      box-shadow: 0 0 22px rgba(255, 23, 46, 0.45);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .btn-flash-red:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 0 32px rgba(255, 23, 46, 0.75);
+      filter: brightness(1.08);
+    }
+    .btn-flash-red:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+    .btn-flash-red::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -75%;
+      width: 50%;
+      height: 200%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+      transform: rotate(25deg);
+      animation: flashSweep 3.2s infinite;
+    }
+
+    @keyframes flashSweep {
+      0%, 65% { left: -75%; }
+      100% { left: 145%; }
+    }
+
+    /* 全螢幕瞬間紅光閃爍特效 */
+    @keyframes screenFlashBurst {
+      0% { opacity: 0.75; }
+      100% { opacity: 0; }
+    }
+    .screen-flash-overlay {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, rgba(255, 23, 46, 0.55) 0%, rgba(255, 23, 46, 0.15) 70%, transparent 100%);
+      z-index: 9999;
+      animation: screenFlashBurst 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* 1:1 正方形容器 */
+    .aspect-square-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background-color: #08080a;
+    }
+
+    /* 自訂 datetime-local 深色圖示反白 */
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) sepia(1) saturate(5) hue-rotate(325deg);
+      cursor: pointer;
+    }
+
+    /* 勝出印章動畫 */
+    @keyframes stampSlam {
+      0% { transform: scale(2.2) rotate(-18deg); opacity: 0; }
+      70% { transform: scale(0.95) rotate(-8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(-8deg); opacity: 1; }
+    }
+    .winner-stamp {
+      animation: stampSlam 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes pulseRed {
+      0%, 100% { opacity: 1; box-shadow: 0 0 10px #ff172e; }
+      50% { opacity: 0.35; box-shadow: 0 0 2px #ff172e; }
+    }
+    .dot-live {
+      animation: pulseRed 1.4s infinite;
+    }
+  </style>
+</head>
+<body class="pb-16">
+
+  <!-- 頂部導覽列 & 隱藏管理員觸發彩蛋 -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-black/80 border-b border-red-600/30">
+    <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchToCreateView()">
+        <div class="w-8 h-8 rounded bg-red-600 flex items-center justify-center shadow-[0_0_15px_rgba(255,23,46,0.7)]">
+          <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div>
+          <span class="font-orbitron font-black tracking-wider text-base sm:text-lg text-white">FLASH<span class="text-red-500">//</span>VOTE</span>
+          <span class="hidden sm:inline-block ml-2 text-[11px] font-mono-tech text-zinc-400 tracking-widest">SNAP &amp; DECIDE</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- 雲端狀態指示 -->
+        <div id="syncBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900/90 border border-zinc-800 text-[11px] font-mono-tech text-zinc-300">
+          <span class="w-2 h-2 rounded-full bg-red-500 dot-live"></span>
+          <span id="syncStatusText">GAS 連線就緒</span>
+        </div>
+
+        <!-- 隱藏管理員開票彩蛋按鈕（點擊開啟房主強制開票控制台） -->
+        <button id="hiddenAdminBtn" onclick="openAdminModal()" title="房主隱藏控制台（提前結束開票）"
+          class="group flex items-center gap-1 px-2 py-1 rounded border border-red-950/60 bg-zinc-950/80 hover:border-red-500/80 hover:bg-red-950/30 transition text-[11px] font-mono-tech text-zinc-600 hover:text-red-400">
+          <span>⚡</span>
+          <span class="tracking-tighter">SYS.01</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 pt-6">
+
+    <!-- ==========================================
+         VIEW 1: 建立投票畫面 (拍照 + 1:1 裁切 + 設定時間)
+         ========================================== -->
+    <section id="createView" class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-l-4 border-red-600 pl-3.5">
+        <div>
+          <p class="font-mono-tech text-xs text-red-500 tracking-widest uppercase">STEP 01 // CREATE SNAP POLL</p>
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">建立二選一拍照投票</h1>
+        </div>
+        <button type="button" onclick="fillDemoSample()"
+          class="self-start sm:self-auto text-xs font-mono-tech px-3 py-1.5 rounded border border-red-500/40 bg-red-950/20 text-red-400 hover:bg-red-600 hover:text-white transition">
+          ⚡ CodePen 一鍵填入測試圖
+        </button>
+      </div>
+
+      <div class="flash-card rounded-2xl p-5 sm:p-7 space-y-6">
+        <!-- 投票題目 -->
+        <div>
+          <label class="block text-xs font-mono-tech text-red-400 tracking-wider uppercase mb-2">
+            01. 投票題目 / QUESTION
+          </label>
+          <input id="questionInput" type="text" placeholder="例如：今天午餐吃哪一間？社團海報選哪張？"
+            class="w-full px-4 py-3.5 rounded-xl bg-black/90 border border-zinc-800 focus:border-red-500 focus:ring-2 focus:ring-red-500/30 outline-none text-white placeholder-zinc-600 text-base font-medium transition" />
+          <div class="flex flex-wrap gap-1.5 mt-2.5">
+            <button type="button" onclick="setQuickQuestion('午餐吃哪一間比較爽？')" class="text-xs px-2.5 py-1 rounded bg-zinc-900 hover:bg-red-950/50 text-zinc-400 hover:text-red-300 border border-zinc-800 transition">🍜 午餐吃哪間</button>
+            <button type="button" onclick="setQuickQuestion('這兩件外套挑哪一件？')" class="text-xs px-2.5 py-1 rounded bg-zinc-900 hover:bg-red-950/50 text-zinc-400 hover:text-red-300 border border-zinc-800 transition">🧥 外套挑哪件</button>
+            <button type="button" onclick="setQuickQuestion('社團成發主視覺海報定案！')" class="text-xs px-2.5 py-1 rounded bg-zinc-900 hover:bg-red-950/50 text-zinc-400 hover:text-red-300 border border-zinc-800 transition">🎨 海報選哪張</button>
+          </div>
+        </div>
+
+        <!-- 雙照片 1:1 拍攝區 -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-mono-tech text-red-400 tracking-wider uppercase">
+              02. 拍攝或上傳 A / B 照片（自動 1:1 正方形裁切・800px 壓縮）
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- 選項 A -->
+            <div class="bg-black/70 border border-zinc-800/90 rounded-xl p-3.5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-orbitron font-bold text-sm text-red-500 tracking-wider">OPTION A</span>
+                <span id="metaA" class="font-mono-tech text-[11px] text-zinc-500">1:1 SQUARE</span>
+              </div>
+
+              <label for="fileInputA" class="aspect-square-box rounded-lg border-2 border-dashed border-zinc-700 hover:border-red-500 flex flex-col items-center justify-center cursor-pointer group transition">
+                <img id="previewA" class="hidden w-full h-full object-cover" alt="選項 A 預覽" />
+                <div id="placeholderA" class="flex flex-col items-center text-center p-4">
+                  <div class="w-12 h-12 rounded-full bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-500 group-hover:scale-110 group-hover:bg-red-600 group-hover:text-white transition mb-2.5">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <span class="text-sm font-bold text-zinc-200">點擊拍攝 / 選擇照片 A</span>
+                  <span class="text-[11px] text-zinc-500 mt-1">自動中心裁切為 1:1 比例</span>
+                </div>
+              </label>
+              <input id="fileInputA" type="file" accept="image/*" class="hidden" onchange="handleImageSelect(event, 'A')" />
+
+              <input id="labelInputA" type="text" placeholder="選項 A 備註（選填，預設：選項 A）"
+                class="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-red-500 outline-none text-sm text-white placeholder-zinc-600" />
+            </div>
+
+            <!-- 選項 B -->
+            <div class="bg-black/70 border border-zinc-800/90 rounded-xl p-3.5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-orbitron font-bold text-sm text-red-500 tracking-wider">OPTION B</span>
+                <span id="metaB" class="font-mono-tech text-[11px] text-zinc-500">1:1 SQUARE</span>
+              </div>
+
+              <label for="fileInputB" class="aspect-square-box rounded-lg border-2 border-dashed border-zinc-700 hover:border-red-500 flex flex-col items-center justify-center cursor-pointer group transition">
+                <img id="previewB" class="hidden w-full h-full object-cover" alt="選項 B 預覽" />
+                <div id="placeholderB" class="flex flex-col items-center text-center p-4">
+                  <div class="w-12 h-12 rounded-full bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-500 group-hover:scale-110 group-hover:bg-red-600 group-hover:text-white transition mb-2.5">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <span class="text-sm font-bold text-zinc-200">點擊拍攝 / 選擇照片 B</span>
+                  <span class="text-[11px] text-zinc-500 mt-1">自動中心裁切為 1:1 比例</span>
+                </div>
+              </label>
+              <input id="fileInputB" type="file" accept="image/*" class="hidden" onchange="handleImageSelect(event, 'B')" />
+
+              <input id="labelInputB" type="text" placeholder="選項 B 備註（選填，預設：選項 B）"
+                class="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 focus:border-red-500 outline-none text-sm text-white placeholder-zinc-600" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 精確截止時間設定 -->
+        <div>
+          <label class="block text-xs font-mono-tech text-red-400 tracking-wider uppercase mb-2">
+            03. 設定開票截止時間（精確到幾點幾分）
+          </label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input id="deadlineInput" type="datetime-local"
+              class="flex-1 px-4 py-3 rounded-xl bg-black/90 border border-zinc-800 focus:border-red-500 outline-none text-white font-mono-tech text-sm" />
+            <div class="flex flex-wrap gap-1.5 items-center">
+              <button type="button" onclick="addMinutesToDeadline(1)" class="px-3 py-2.5 rounded-lg bg-zinc-900 hover:bg-red-600 text-xs font-mono-tech text-zinc-300 hover:text-white border border-zinc-800 transition">+1分 (快測)</button>
+              <button type="button" onclick="addMinutesToDeadline(5)" class="px-3 py-2.5 rounded-lg bg-zinc-900 hover:bg-red-600 text-xs font-mono-tech text-zinc-300 hover:text-white border border-zinc-800 transition">+5分</button>
+              <button type="button" onclick="addMinutesToDeadline(30)" class="px-3 py-2.5 rounded-lg bg-zinc-900 hover:bg-red-600 text-xs font-mono-tech text-zinc-300 hover:text-white border border-zinc-800 transition">+30分</button>
+              <button type="button" onclick="addMinutesToDeadline(60)" class="px-3 py-2.5 rounded-lg bg-zinc-900 hover:bg-red-600 text-xs font-mono-tech text-zinc-300 hover:text-white border border-zinc-800 transition">+1小時</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 送出建立按鈕 -->
+        <button id="createPollBtn" type="button" onclick="createPoll()"
+          class="btn-flash-red w-full py-4 rounded-xl font-black text-base sm:text-lg tracking-wider flex items-center justify-center gap-2.5 cursor-pointer">
+          <span>⚡ 上傳雲端並建立投票連結</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 2: 投票與即時開票畫面 (?poll=P...)
+         ========================================== -->
+    <section id="pollView" class="hidden space-y-5">
+
+      <!-- 頂部狀態與倒數計時儀表板 -->
+      <div class="flash-card rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+          <div>
+            <div class="flex items-center
